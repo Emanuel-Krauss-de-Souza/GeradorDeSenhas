@@ -34,7 +34,7 @@ export default function Login({ navigation }) {
       
       <View style={styles.formContainer}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.textoLabel}>Email</Text>
           <TextInput
             style={styles.input}
             placeholder="Digite seu email"
@@ -46,7 +46,7 @@ export default function Login({ navigation }) {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Senha</Text>
+          <Text style={styles.textoLabel}>Senha</Text>
           <TextInput
             style={styles.input}
             placeholder="Digite sua senha"
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     width: 350,
     marginBottom: 16,
   },
-  label: {
+  textoLabel: {
     fontWeight: 'bold',
     color: "white",
     fontSize: 18,
