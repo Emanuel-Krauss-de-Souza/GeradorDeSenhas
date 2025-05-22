@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { mensagemToast } from "../components/ToastMensagem";
 
 export default function Login({ navigation }) {
 
@@ -22,6 +23,7 @@ export default function Login({ navigation }) {
 
   const nvgTelaInicial = () => {
     navigation.navigate("telaInicial");
+    mensagemToast('success', 'Sucesso', 'Login efetuado com sucesso.');
   };
 
   const nvgCadastro = () => {

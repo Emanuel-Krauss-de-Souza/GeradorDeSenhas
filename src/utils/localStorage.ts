@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Buscar todas as senhas salvas
 export const getInformacoes = async (key) => {
   try {
     const data = await AsyncStorage.getItem(key);

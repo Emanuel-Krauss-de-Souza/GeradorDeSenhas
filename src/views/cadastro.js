@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { mensagemToast } from "../components/ToastMensagem";
 
 export default function Cadastro({ navigation }) {
 
@@ -25,8 +26,8 @@ export default function Cadastro({ navigation }) {
 
   const nvgLogin = () => {
     navigation.navigate("login");
+    mensagemToast('success', 'Sucesso', 'Cadastro efetuado com sucesso.');
   };
-
   return (
     <View style={styles.container}>
       <Text style={styles.tituloInicial}>Cadastre-se</Text>

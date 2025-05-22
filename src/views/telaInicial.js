@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';  
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Modal, TextInput } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { gerarSenha } from '../service/senhas';
+import { mensagemToast } from '../components/ToastMensagem';
+import Icon from 'react-native-vector-icons/FontAwesome'; // Importando o ícone de logout
 
 export default function telaInicial({ navigation }) {
   const [senha, setSenha] = useState('');
@@ -27,7 +29,12 @@ export default function telaInicial({ navigation }) {
   };
 
   const copiarSenha = async () => {
+    if (!senha) {
+      mensagemToast('error', 'Erro', 'Nenhuma senha gerada para copiar.');
+      return;
+    }
     await Clipboard.setStringAsync(senha);
+    mensagemToast('success', 'Copiado', 'Senha copiada para a área de transferência.');
   };
 
   const nvgHistorico = () => {
@@ -36,13 +43,13 @@ export default function telaInicial({ navigation }) {
 
   const salvarSenha = async () => {
     if (!nome.trim()) {
-      Alert.alert('Erro', 'O nome não pode estar vazio.');
+      mensagemToast('error', 'Erro','O nome não pode estar vazio.');
       return;
     }
 
     const nomeDuplicado = historico.find(item => item.nome === nome);
     if (nomeDuplicado) {
-      Alert.alert('Erro', 'Este nome já está sendo utilizado.');
+      mensagemToast('error', 'Erro', 'Este nome já está sendo utilizado.');
       return;
     }
 
@@ -51,7 +58,13 @@ export default function telaInicial({ navigation }) {
     setHistorico(novaLista);
     setNome('');
     setModalVisible(false);
-    Alert.alert('Sucesso', 'Senha salva com sucesso!');
+    mensagemToast('success', 'Sucesso', 'Senha salva com sucesso!');
+  };
+
+  // Função para logout
+  const nvgLogin = () => {
+    navigation.navigate('login');
+    mensagemToast('success', 'Sucesso', 'Deslogado com sucesso!');
   };
 
   return (
@@ -64,16 +77,29 @@ export default function telaInicial({ navigation }) {
       <View style={styles.viewSenhaGerada}>
         <Text style={styles.textButton}>{senha || "Clique em 'Gerar Senha'"}</Text>
       </View>
+
       <TouchableOpacity style={styles.buttonGerarSenha} onPress={coletarSenha}>
         <Text style={styles.textButton}>Gerar Senha</Text>
       </TouchableOpacity>
+
       <TouchableOpacity style={styles.buttonCopiarSenha} onPress={copiarSenha}>
         <Text style={styles.textButton}>Copiar Senha</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.buttonSalvarSenha} onPress={() => setModalVisible(true)} disabled={!senha}>
+
+      <TouchableOpacity
+        style={[styles.buttonSalvarSenha, !senha && styles.buttonDisabled]}
+        onPress={() => setModalVisible(true)}
+        disabled={!senha}
+      >
         <Text style={styles.textButton}>Salvar</Text>
       </TouchableOpacity>
+
       <Text style={styles.textoRota} onPress={nvgHistorico}>Histórico de Senhas</Text>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={nvgLogin}>
+        <Icon name="sign-out" size={30} color="#fff" />
+      </TouchableOpacity>
+
       <StatusBar style="auto" />
 
       <Modal
@@ -85,6 +111,7 @@ export default function telaInicial({ navigation }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
             <Text style={styles.modalTitle}>Salvar Senha</Text>
+
             <Text style={styles.textoSalvarSenha}>Nome da Senha</Text>
             <TextInput
               style={styles.input}
@@ -92,15 +119,18 @@ export default function telaInicial({ navigation }) {
               value={nome}
               onChangeText={setNome}
             />
+
             <Text style={styles.textoSalvarSenha}>Senha Gerada</Text>
             <TextInput
               style={styles.input}
               value={senha}
               editable={false}
             />
+
             <TouchableOpacity style={styles.buttonSalvarSenhaModal} onPress={salvarSenha}>
               <Text style={styles.textButton}>Salvar</Text>
             </TouchableOpacity>
+
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Text style={{ color: '#000', marginTop: 10 }}>Cancelar</Text>
             </TouchableOpacity>
@@ -172,6 +202,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
   textButton: {
     fontWeight: 'bold',
     color: "white",
@@ -182,6 +215,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: "white",
     fontSize: 15,
+  },
+  logoutButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20, 
+    backgroundColor: '#fcb408', 
+    padding: 10,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalContainer: {
     flex: 1,
@@ -211,20 +254,14 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   buttonSalvarSenhaModal: {
-    width: 250,
-    height: 50,
-    backgroundColor: "#c27c5d",
-    borderWidth: 2,
-    borderColor: "#b55336",
-    borderRadius: 5,
-    justifyContent: 'center',
+    backgroundColor: '#52baa7',
+    padding: 10,
+    width: '100%',
     alignItems: 'center',
-    marginTop: 10,
+    borderRadius: 5,
   },
   textoSalvarSenha: {
     fontWeight: 'bold',
-    color: "gray",
-    fontSize: 18,
-    marginBottom: 4,
+    marginBottom: 5,
   },
 });
