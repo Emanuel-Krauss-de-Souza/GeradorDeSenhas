@@ -5,6 +5,7 @@ import historicoSenhas from './src/views/historicoSenhas';
 import Login from './src/views/login';
 import cadastro from './src/views/cadastro';
 import Toast from 'react-native-toast-message';
+import './src/service/interceptor';
 
 const Stack = createNativeStackNavigator();
 

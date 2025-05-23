@@ -24,10 +24,24 @@ export default function Cadastro({ navigation }) {
     }
   };
 
-  const nvgLogin = () => {
-    navigation.navigate("login");
-    mensagemToast('success', 'Sucesso', 'Cadastro efetuado com sucesso.');
+  const cadastrarUsuario = async () => {
+    if (!isValid) return;
+    
+    setIsLoading(true);
+    try {
+      const userData = await signup(nome, email, senha, confirmarSenha);      
+      mostrarToast('success', 'Sucesso', 'Cadastro realizado com sucesso!');
+      setTimeout(() => {
+        navigation.navigate("login");
+      }, 1500);
+      
+    } catch (error) {
+      mostrarToast('error', 'Erro no Cadastro', error.message || "Ocorreu um erro ao cadastrar");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
   return (
     <View style={styles.container}>
       <Text style={styles.tituloInicial}>Cadastre-se</Text>
@@ -94,7 +108,7 @@ export default function Cadastro({ navigation }) {
 
         <TouchableOpacity
           style={[styles.buttonEntrar, isValid ? {} : styles.buttonDisabilitado]}
-          onPress={nvgLogin}
+          onPress={cadastrarUsuario}
           disabled={!isValid}
         >
           <Text style={styles.textButton}>Cadastrar</Text>
