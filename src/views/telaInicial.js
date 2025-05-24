@@ -5,7 +5,7 @@ import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { gerarSenha } from '../service/senhas';
 import { mensagemToast } from '../components/ToastMensagem';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Importando o ícone de logout
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default function telaInicial({ navigation }) {
   const [senha, setSenha] = useState('');
@@ -61,7 +61,6 @@ export default function telaInicial({ navigation }) {
     mensagemToast('success', 'Sucesso', 'Senha salva com sucesso!');
   };
 
-  // Função para logout
   const nvgLogin = () => {
     navigation.navigate('login');
     mensagemToast('success', 'Sucesso', 'Deslogado com sucesso!');

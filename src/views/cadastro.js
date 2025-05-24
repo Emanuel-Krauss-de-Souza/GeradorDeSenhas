@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
 import { mensagemToast } from "../components/ToastMensagem";
+import { signup } from "../service/auth/authService";
 
 export default function Cadastro({ navigation }) {
 
@@ -8,35 +9,31 @@ export default function Cadastro({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [isValid, setIsValid] = useState(false); 
+  const [isValid, setIsValid] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [senhasIguais, setSenhasIguais] = useState(true);
 
-  const validarFormulario = (senhaLocal, confirmarSenhaLocal) => {
-    if (
-      nome.trim() && 
-      email.trim() && 
-      senhaLocal.trim() && 
-      confirmarSenhaLocal.trim() && 
-      senhaLocal === confirmarSenhaLocal
-    ) {
-      setIsValid(true);
-    } else {
-      setIsValid(false);
-    }
-  };
+  useEffect(() => {
+    const camposPreenchidos = nome.trim() && email.trim() && senha.trim() && confirmarSenha.trim();
+    const senhasConferem = senha === confirmarSenha;
+
+    setSenhasIguais(senhasConferem);
+    setIsValid(camposPreenchidos && senhasConferem);
+  }, [nome, email, senha, confirmarSenha]);
 
   const cadastrarUsuario = async () => {
-    if (!isValid) return;
-    
+    console.log("Senha:", senha, "Confirmar Senha:", confirmarSenha)
+    if (!isValid || isLoading) return;
+
     setIsLoading(true);
     try {
-      const userData = await signup(nome, email, senha, confirmarSenha);      
-      mostrarToast('success', 'Sucesso', 'Cadastro realizado com sucesso!');
+      await signup(nome, email, senha, confirmarSenha);
+      mensagemToast('success', 'Sucesso', 'Cadastro realizado com sucesso!');
       setTimeout(() => {
         navigation.navigate("login");
-      }, 1500);
-      
+      }, 500);
     } catch (error) {
-      mostrarToast('error', 'Erro no Cadastro', error.message || "Ocorreu um erro ao cadastrar");
+      mensagemToast('error', 'Erro no Cadastro', error?.message || "Ocorreu um erro ao cadastrar");
     } finally {
       setIsLoading(false);
     }
@@ -45,7 +42,7 @@ export default function Cadastro({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.tituloInicial}>Cadastre-se</Text>
-      
+
       <View style={styles.formContainer}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Nome: *</Text>
@@ -54,10 +51,7 @@ export default function Cadastro({ navigation }) {
             placeholder="Digite seu nome"
             placeholderTextColor="#555"
             value={nome}
-            onChangeText={(text) => {
-              setNome(text);
-              validarFormulario();
-            }}
+            onChangeText={setNome}
           />
         </View>
 
@@ -69,10 +63,7 @@ export default function Cadastro({ navigation }) {
             keyboardType="email-address"
             placeholderTextColor="#555"
             value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              validarFormulario();
-            }}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -81,13 +72,10 @@ export default function Cadastro({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Digite sua senha"
-            secureTextEntry={true}
+            secureTextEntry
             placeholderTextColor="#555"
             value={senha}
-            onChangeText={(text) => {
-              setSenha(text);
-              validarFormulario(text, confirmarSenha);
-            }}
+            onChangeText={setSenha}
           />
         </View>
 
@@ -96,22 +84,24 @@ export default function Cadastro({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Confirme sua senha"
-            secureTextEntry={true}
+            secureTextEntry
             placeholderTextColor="#555"
             value={confirmarSenha}
-            onChangeText={(text) => {
-              setConfirmarSenha(text);
-              validarFormulario(senha, text);
-            }}
+            onChangeText={setConfirmarSenha}
           />
+          {!senhasIguais && (
+            <Text style={styles.errorText}>As senhas não coincidem</Text>
+          )}
         </View>
 
         <TouchableOpacity
-          style={[styles.buttonEntrar, isValid ? {} : styles.buttonDisabilitado]}
+          style={[styles.buttonEntrar, !isValid && styles.buttonDisabilitado]}
           onPress={cadastrarUsuario}
-          disabled={!isValid}
+          disabled={!isValid || isLoading}
         >
-          <Text style={styles.textButton}>Cadastrar</Text>
+          <Text style={styles.textButton}>
+            {isLoading ? "Aguarde..." : "Cadastrar"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -169,11 +159,16 @@ const styles = StyleSheet.create({
   },
   buttonDisabilitado: {
     backgroundColor: "#d3d3d3",
-    borderColor: "#a0a0a0", 
+    borderColor: "#a0a0a0",
   },
   textButton: {
     fontWeight: 'bold',
     color: "white",
     fontSize: 25,
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 5,
+    fontSize: 14,
   },
 });

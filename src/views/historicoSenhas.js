@@ -4,26 +4,45 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { mensagemToast } from '../components/ToastMensagem';
+import { getItens, deleteItem } from '../service/auth/itemService';
 
 export default function HistoricoSenhas() {
   const [senhasSalvas, setSenhasSalvas] = useState([]);
-  const [visiveis, setVisiveis] = useState({});
+  const [token, setToken] = useState(null);
+  const [visiveis, setVisiveis] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [indiceSelecionado, setIndiceSelecionado] = useState(null);
   const navigation = useNavigation();
 
   useEffect(() => {
-    const carregarSenhas = async () => {
-      const dados = await AsyncStorage.getItem('senhas');
-      if (dados) {
-        setSenhasSalvas(JSON.parse(dados));
+    async function carregarTokenESenhas() {
+      try {
+        const storedToken = await AsyncStorage.getItem('token');
+        if (!storedToken) {
+          mensagemToast('error', 'Erro', 'Token não encontrado. Faça login novamente.');
+          return;
+        }
+        setToken(storedToken);
+
+        const dados = await getItens(storedToken);
+        if (!Array.isArray(dados)) {
+          mensagemToast('error', 'Erro', 'Dados recebidos em formato inválido.');
+          return;
+        }
+        setSenhasSalvas(dados);
+        setVisiveis(new Array(dados.length).fill(false));
+      } catch (error) {
+        mensagemToast('error', 'Erro', error.message);
       }
-    };
-    carregarSenhas();
+    }
+
+    carregarTokenESenhas();
   }, []);
 
   const alternarVisibilidade = (index) => {
-    setVisiveis(prev => ({ ...prev, [index]: !prev[index] }));
+    const novaVisibilidade = [...visiveis];
+    novaVisibilidade[index] = !novaVisibilidade[index];
+    setVisiveis(novaVisibilidade);
   };
 
   const copiarSenha = (senha) => {
@@ -31,20 +50,29 @@ export default function HistoricoSenhas() {
     mensagemToast('success', 'Copiado', 'Senha copiada para a área de transferência.');
   };
 
-  const deletarSenha = async () => {
-    if (indiceSelecionado === null) return;
+  const confirmarExclusao = async () => {
+    try {
+      if (indiceSelecionado === null) return;
+      const id = senhasSalvas[indiceSelecionado]?.id;
+      if (!id) return;
 
-    const novaLista = [...senhasSalvas];
-    novaLista.splice(indiceSelecionado, 1);
-    await AsyncStorage.setItem('senhas', JSON.stringify(novaLista));
-    setSenhasSalvas(novaLista);
-    setModalVisible(false);
-    setIndiceSelecionado(null);
-    mensagemToast('success', 'Deletado', 'Senha excluída com sucesso.');
+      await deleteItem(id, token);
+
+      const novaLista = senhasSalvas.filter((_, i) => i !== indiceSelecionado);
+      setSenhasSalvas(novaLista);
+      setVisiveis(new Array(novaLista.length).fill(false));
+
+      setModalVisible(false);
+      setIndiceSelecionado(null);
+
+      mensagemToast('success', 'Sucesso', 'Senha deletada com sucesso.');
+    } catch (error) {
+      mensagemToast('error', 'Erro ao deletar', error.message);
+    }
   };
 
   const nvgTelaInicial = () => {
-    navigation.navigate("telaInicial");
+    navigation.navigate('telaInicial');
   };
 
   const renderItem = ({ item, index }) => (
@@ -55,15 +83,17 @@ export default function HistoricoSenhas() {
           {visiveis[index] ? item.senha : '********'}
         </Text>
         <TouchableOpacity onPress={() => alternarVisibilidade(index)}>
-          <Text style={styles.icone}>😑</Text>
+          <Text style={styles.icone}>👁️</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => copiarSenha(item.senha)}>
-          <Text style={styles.icone}>✋</Text>
+          <Text style={styles.icone}>📋</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          setIndiceSelecionado(index);
-          setModalVisible(true);
-        }}>
+        <TouchableOpacity
+          onPress={() => {
+            setIndiceSelecionado(index);
+            setModalVisible(true);
+          }}
+        >
           <Text style={styles.icone}>🗑️</Text>
         </TouchableOpacity>
       </View>
@@ -73,21 +103,24 @@ export default function HistoricoSenhas() {
   return (
     <View style={styles.container}>
       <Text style={styles.tituloInicial}>Histórico de Senhas</Text>
+
       {senhasSalvas.length === 0 ? (
         <Text style={styles.textoSemSenhas}>Nenhuma senha adicionada até o momento.</Text>
       ) : (
         <FlatList
           data={senhasSalvas}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
           renderItem={renderItem}
           style={styles.lista}
         />
       )}
+
       <View style={styles.containerBotao}>
         <TouchableOpacity style={styles.buttonEntrar} onPress={nvgTelaInicial}>
           <Text style={styles.textButton}>Voltar</Text>
         </TouchableOpacity>
       </View>
+
       <Modal
         animationType="fade"
         transparent={true}
@@ -109,9 +142,9 @@ export default function HistoricoSenhas() {
                   setIndiceSelecionado(null);
                 }}
               >
-                <Text style={styles.modalTextoBotao}>Cancelar</Text>
+                <Text style={[styles.modalTextoBotao, { color: '#000' }]}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalBotaoExcluir} onPress={deletarSenha}>
+              <TouchableOpacity style={styles.modalBotaoExcluir} onPress={confirmarExclusao}>
                 <Text style={styles.modalTextoBotao}>Excluir</Text>
               </TouchableOpacity>
             </View>
@@ -125,12 +158,12 @@ export default function HistoricoSenhas() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#718f85",
+    backgroundColor: '#718f85',
     paddingTop: 80,
     paddingHorizontal: 20,
   },
   tituloInicial: {
-    color: "white",
+    color: 'white',
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 20,
@@ -139,9 +172,9 @@ const styles = StyleSheet.create({
   buttonEntrar: {
     width: 150,
     height: 50,
-    backgroundColor: "#fcb408",
+    backgroundColor: '#fcb408',
     borderWidth: 2,
-    borderColor: "#e28d01",
+    borderColor: '#e28d01',
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -150,7 +183,7 @@ const styles = StyleSheet.create({
   },
   textButton: {
     fontWeight: 'bold',
-    color: "white",
+    color: 'white',
     fontSize: 25,
   },
   lista: {

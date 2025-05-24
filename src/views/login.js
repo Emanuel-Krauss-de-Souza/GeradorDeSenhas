@@ -1,29 +1,41 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
 import { mensagemToast } from "../components/ToastMensagem";
+import { login } from "../service/auth/authService";
 
 export default function Login({ navigation }) {
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [isValid, setIsValid] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validarFormulario = () => {
-
-    if (email.trim() && senha.trim()) {
-      setIsValid(true);
-    } else {
-      setIsValid(false);
-    }
+    setIsValid(email.trim() && senha.trim());
   };
 
   useEffect(() => {
     validarFormulario();
   }, [email, senha]);
 
-  const nvgTelaInicial = () => {
-    navigation.navigate("telaInicial");
-    mensagemToast('success', 'Sucesso', 'Login efetuado com sucesso.');
+  const loginUsuario = async () => {
+    if (!isValid) return;
+    
+    setIsLoading(true);
+    try {
+      const userData = await login(email, senha);
+      console.log('Login bem-sucedido:', userData);
+      
+      mensagemToast('success', 'Sucesso', 'Login realizado com sucesso!');
+      setTimeout(() => {
+        navigation.navigate("telaInicial");
+      }, 1500);
+      
+    } catch (error) {
+      mensagemToast('error', 'Erro no Login', error.message || "Ocorreu um erro ao fazer login");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const nvgCadastro = () => {
@@ -43,7 +55,7 @@ export default function Login({ navigation }) {
             keyboardType="email-address"
             placeholderTextColor="#555"
             value={email}
-            onChangeText={(text) => setEmail(text)} 
+            onChangeText={setEmail} 
           />
         </View>
 
@@ -55,21 +67,22 @@ export default function Login({ navigation }) {
             secureTextEntry={true}
             placeholderTextColor="#555"
             value={senha}
-            onChangeText={(text) => setSenha(text)}
+            onChangeText={setSenha}
           />
         </View>
 
         <TouchableOpacity
           style={[styles.buttonEntrar, isValid ? {} : styles.buttonDisabilitado]} 
-          onPress={nvgTelaInicial} 
-          disabled={!isValid} 
-        >
+          onPress={loginUsuario} 
+          disabled={!isValid}>
           <Text style={styles.textButton}>Entrar</Text>
         </TouchableOpacity>
 
         <View style={styles.textoPossuiConta}>
           <Text style={styles.textoRota}>Não possui uma conta?</Text>
-          <TouchableOpacity style={styles.textoCadastro} onPress={nvgCadastro}>Cadastre-se</TouchableOpacity>
+          <TouchableOpacity onPress={nvgCadastro}>
+             <Text style={styles.textoCadastro}>Cadastre-se</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -151,4 +164,3 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 });
-""
