@@ -10,10 +10,10 @@ export const gerarSenha = () => {
   return senhaGerada;
 };
 
-export const salvarSenha = async (password) => {
-  await setDataStorage("password", password);
+export const salvarSenha = async (senha) => {
+  await setDataStorage("senha", senha);
 };
 
 export const coletarSenha = async () => {
-  return await getDataStorage("password");
+  return await getDataStorage("senha");
 };
